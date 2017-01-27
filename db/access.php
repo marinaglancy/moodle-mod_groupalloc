@@ -46,7 +46,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-// Modify capabilities as needed and remove this comment.
 $capabilities = array(
     'mod/groupalloc:addinstance' => array(
         'riskbitmask' => RISK_XSS,
@@ -68,12 +67,53 @@ $capabilities = array(
         )
     ),
 
-    'mod/groupalloc:submit' => array(
+    'mod/groupalloc:choosegroup' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'student' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'frontpage' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/groupalloc:leavegroup' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'student' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'frontpage' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/groupalloc:viewmembers' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'student' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'frontpage' => CAP_ALLOW,
+        )
+    ),
+
+    'mod/groupalloc:creategroup' => array(
+        'riskbitmask' => RISK_SPAM,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+    ),
+
+    'mod/groupalloc:createpasswordgroup' => array(
         'riskbitmask' => RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => array(
-            'student' => CAP_ALLOW
-        )
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        ),
+        'clonepermissionsfrom' => 'moodle/course:managegroups'
     ),
 );

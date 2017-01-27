@@ -42,7 +42,7 @@ class mod_groupalloc_mod_form extends moodleform_mod {
      * Defines forms elements
      */
     public function definition() {
-        global $CFG;
+        global $CFG, $COURSE;
 
         $mform = $this->_form;
 
@@ -58,7 +58,6 @@ class mod_groupalloc_mod_form extends moodleform_mod {
         }
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
-        $mform->addHelpButton('name', 'groupallocname', 'groupalloc');
 
         // Adding the standard "intro" and "introformat" fields.
         if ($CFG->branch >= 29) {
@@ -67,12 +66,44 @@ class mod_groupalloc_mod_form extends moodleform_mod {
             $this->add_intro_editor();
         }
 
-        // Adding the rest of groupalloc settings, spreading all them into this fieldset
-        // ... or adding more fieldsets ('header' elements) if needed for better logic.
-        $mform->addElement('static', 'label1', 'groupallocsetting1', 'Your groupalloc fields go here. Replace me!');
+        // Select grouping.
+        $groupings = groups_get_all_groupings($COURSE->id);
+        $choices = array_map(function ($grouping) {
+            return format_string($grouping->name);
+        }, $groupings);
+        $context = context_course::instance($COURSE->id);
+        if (empty($this->_cm) && has_capability('moodle/course:managegroups', $context)) {
+            $choices = [-1 => 'Create new grouping'] + $choices; // TODO lang
+        }
+        $choices = [0 => 'No grouping'] + $choices; // TODO lang
 
-        $mform->addElement('header', 'groupallocfieldset', get_string('groupallocfieldset', 'groupalloc'));
-        $mform->addElement('static', 'label2', 'groupallocsetting2', 'Your groupalloc fields go here. Replace me!');
+        $mform->addElement('select', 'config_groupingid', get_string('grouping', 'group'), $choices);
+
+        if (empty($this->_cm)) {
+            $mform->addElement('text', 'config_groupingname', 'New grouping name', $choices); // TODO lang
+            $mform->disabledIf('config_groupingname', 'config_groupingid', 'ne', -1);
+            $mform->setType('config_groupingname', PARAM_TEXT);
+        }
+
+        // Different options
+        $choices = [0 => 'Unlimited'] + array_combine([1,2,3,4,5], [1,2,3,4,5]); // TODO other choices?
+        $mform->addElement('select', 'config_maxgroups', 'Maximum groups per person', $choices); // TODO lang
+        $mform->setDefault('config_maxgroups', 1);
+
+        $mform->addElement('text', 'config_minmembers', 'Minimum members in group'); // TODO lang
+        $mform->setDefault('config_minmembers', 0);
+        $mform->addRule('config_minmembers', null, 'numeric', null, 'client');
+        $mform->setType('config_minmembers', PARAM_INT);
+        // TODO: add help that members will not be allowed to leave if the number of members is less than minimum.
+
+        $mform->addElement('checkbox', 'config_autoremove', '', 'Automatically remove empty groups'); // TODO lang
+        // TODO: add help that only groups created from this module will be removed.
+        $mform->setDefault('config_autoremove', 1);
+
+        $mform->addElement('text', 'config_maxmembers', 'Maximum members in group'); // TODO lang
+        // TODO: add help that 0 or empty value means no limit.
+        $mform->addRule('config_maxmembers', null, 'numeric', null, 'client');
+        $mform->setType('config_maxmembers', PARAM_INT);
 
         // Add standard grading elements.
         $this->standard_grading_coursemodule_elements();
@@ -82,5 +113,49 @@ class mod_groupalloc_mod_form extends moodleform_mod {
 
         // Add standard buttons, common to all modules.
         $this->add_action_buttons();
+    }
+
+    /**
+     * Only available on moodleform_mod.
+     *
+     * @param array $default_values passed by reference
+     */
+    function data_preprocessing(&$default_values){
+        parent::data_preprocessing($default_values);
+        if (!empty($default_values['config'])) {
+            $values = json_decode($default_values['config'], true);
+            foreach ($values as $key => $value) {
+                $default_values['config_' . $key] = $value;
+            }
+            unset($default_values['config']);
+        }
+    }
+
+    public function get_data() {
+        $data = parent::get_data();
+        if ($data !== null) {
+            $config = [];
+            foreach ($data as $key => $value) {
+                if (preg_match('/^config_(.*)$/', $key, $matches)) {
+                    $config[$matches[1]] = $value;
+                    unset($data->$key);
+                }
+            }
+            $data->config = json_encode($config);
+        }
+        return $data;
+    }
+
+    // form verification
+    function validation($data, $files) {
+        global $COURSE, $DB, $CFG;
+        $errors = parent::validation($data, $files);
+        $mform = $this->_form;
+
+        if ($data['config_minmembers'] > $data['config_maxmembers']) {
+            $errors['config_maxmembers'] = 'Can not be less than minmembers'; // TODO lang
+        }
+
+        return $errors;
     }
 }

@@ -32,9 +32,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Example constant, you probably want to remove this :-)
+ * Allow to protect groups with passwords.
  */
-define('GROUPALLOC_ULTIMATE_ANSWER', 42);
+define('GROUPALLOC_FEATURE_PASSWORD', 1);
 
 /* Moodle core API */
 
@@ -54,9 +54,19 @@ function groupalloc_supports($feature) {
         case FEATURE_SHOW_DESCRIPTION:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
-            return true;
+            return false;
         case FEATURE_BACKUP_MOODLE2:
             return true;
+        case FEATURE_GROUPS:
+            return false;
+        case FEATURE_GROUPINGS:
+            return false;
+        case FEATURE_MODEDIT_DEFAULT_COMPLETION:
+            return false;
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return false;
+        case FEATURE_COMPLETION_HAS_RULES:
+            return false;
         default:
             return null;
     }
@@ -83,7 +93,7 @@ function groupalloc_add_instance(stdClass $groupalloc, mod_groupalloc_mod_form $
 
     $groupalloc->id = $DB->insert_record('groupalloc', $groupalloc);
 
-    groupalloc_grade_item_update($groupalloc);
+    //groupalloc_grade_item_update($groupalloc);
 
     return $groupalloc->id;
 }
@@ -109,7 +119,7 @@ function groupalloc_update_instance(stdClass $groupalloc, mod_groupalloc_mod_for
 
     $result = $DB->update_record('groupalloc', $groupalloc);
 
-    groupalloc_grade_item_update($groupalloc);
+    //groupalloc_grade_item_update($groupalloc);
 
     return $result;
 }
@@ -166,7 +176,7 @@ function groupalloc_delete_instance($id) {
 
     $DB->delete_records('groupalloc', array('id' => $groupalloc->id));
 
-    groupalloc_grade_item_delete($groupalloc);
+    //groupalloc_grade_item_delete($groupalloc);
 
     return true;
 }
@@ -253,20 +263,6 @@ function groupalloc_print_recent_mod_activity($activity, $courseid, $detail, $mo
 }
 
 /**
- * Function to be run periodically according to the moodle cron
- *
- * This function searches for things that need to be done, such
- * as sending out mail, toggling flags etc ...
- *
- * Note that this has been deprecated in favour of scheduled task API.
- *
- * @return boolean
- */
-function groupalloc_cron () {
-    return true;
-}
-
-/**
  * Returns all other caps used in the module
  *
  * For example, this could be array('moodle/site:accessallgroups') if the
@@ -293,11 +289,11 @@ function groupalloc_get_extra_capabilities() {
 function groupalloc_scale_used($groupallocid, $scaleid) {
     global $DB;
 
-    if ($scaleid and $DB->record_exists('groupalloc', array('id' => $groupallocid, 'grade' => -$scaleid))) {
-        return true;
-    } else {
+    //if ($scaleid and $DB->record_exists('groupalloc', array('id' => $groupallocid, 'grade' => -$scaleid))) {
+    //    return true;
+    //} else {
         return false;
-    }
+    //}
 }
 
 /**
@@ -311,11 +307,11 @@ function groupalloc_scale_used($groupallocid, $scaleid) {
 function groupalloc_scale_used_anywhere($scaleid) {
     global $DB;
 
-    if ($scaleid and $DB->record_exists('groupalloc', array('grade' => -$scaleid))) {
-        return true;
-    } else {
+    //if ($scaleid and $DB->record_exists('groupalloc', array('grade' => -$scaleid))) {
+    //    return true;
+    //} else {
         return false;
-    }
+    //}
 }
 
 /**
@@ -327,7 +323,7 @@ function groupalloc_scale_used_anywhere($scaleid) {
  * @param bool $reset reset grades in the gradebook
  * @return void
  */
-function groupalloc_grade_item_update(stdClass $groupalloc, $reset=false) {
+/*function groupalloc_grade_item_update(stdClass $groupalloc, $reset=false) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
@@ -352,7 +348,7 @@ function groupalloc_grade_item_update(stdClass $groupalloc, $reset=false) {
 
     grade_update('mod/groupalloc', $groupalloc->course, 'mod', 'groupalloc',
             $groupalloc->id, 0, null, $item);
-}
+}*/
 
 /**
  * Delete grade item for given groupalloc instance
@@ -360,13 +356,13 @@ function groupalloc_grade_item_update(stdClass $groupalloc, $reset=false) {
  * @param stdClass $groupalloc instance object
  * @return grade_item
  */
-function groupalloc_grade_item_delete($groupalloc) {
+/*function groupalloc_grade_item_delete($groupalloc) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
     return grade_update('mod/groupalloc', $groupalloc->course, 'mod', 'groupalloc',
             $groupalloc->id, 0, null, array('deleted' => 1));
-}
+}*/
 
 /**
  * Update groupalloc grades in the gradebook
@@ -376,7 +372,7 @@ function groupalloc_grade_item_delete($groupalloc) {
  * @param stdClass $groupalloc instance object with extra cmidnumber and modname property
  * @param int $userid update grade of specific user only, 0 means all participants
  */
-function groupalloc_update_grades(stdClass $groupalloc, $userid = 0) {
+/*function groupalloc_update_grades(stdClass $groupalloc, $userid = 0) {
     global $CFG, $DB;
     require_once($CFG->libdir.'/gradelib.php');
 
@@ -384,7 +380,7 @@ function groupalloc_update_grades(stdClass $groupalloc, $userid = 0) {
     $grades = array();
 
     grade_update('mod/groupalloc', $groupalloc->course, 'mod', 'groupalloc', $groupalloc->id, 0, $grades);
-}
+}*/
 
 /* File API */
 
@@ -462,9 +458,9 @@ function groupalloc_pluginfile($course, $cm, $context, $filearea, array $args, $
  * @param stdClass $module current groupalloc instance record
  * @param cm_info $cm course module information
  */
-function groupalloc_extend_navigation(navigation_node $navref, stdClass $course, stdClass $module, cm_info $cm) {
+//function groupalloc_extend_navigation(navigation_node $navref, stdClass $course, stdClass $module, cm_info $cm) {
     // TODO Delete this function and its docblock, or implement it.
-}
+//}
 
 /**
  * Extends the settings navigation with the groupalloc settings
@@ -475,6 +471,6 @@ function groupalloc_extend_navigation(navigation_node $navref, stdClass $course,
  * @param settings_navigation $settingsnav complete settings navigation tree
  * @param navigation_node $groupallocnode groupalloc administration node
  */
-function groupalloc_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $groupallocnode=null) {
+//function groupalloc_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $groupallocnode=null) {
     // TODO Delete this function and its docblock, or implement it.
-}
+//}

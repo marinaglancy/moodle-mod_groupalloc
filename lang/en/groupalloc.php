@@ -28,15 +28,16 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['modulename'] = 'groupalloc';
-$string['modulenameplural'] = 'groupallocs';
-$string['modulename_help'] = 'Use the groupalloc module for... | The groupalloc module allows...';
-$string['groupalloc:addinstance'] = 'Add a new groupalloc';
-$string['groupalloc:submit'] = 'Submit groupalloc';
-$string['groupalloc:view'] = 'View groupalloc';
-$string['groupallocfieldset'] = 'Custom example fieldset';
-$string['groupallocname'] = 'groupalloc name';
-$string['groupallocname_help'] = 'This is the content of the help tooltip associated with the groupallocname field. Markdown syntax is supported.';
-$string['groupalloc'] = 'groupalloc';
-$string['pluginadministration'] = 'groupalloc administration';
-$string['pluginname'] = 'groupalloc';
+$string['modulename'] = 'Group allocation';
+$string['modulenameplural'] = 'Group allocations';
+$string['modulename_help'] = 'Use the Group allocation module to allow students to allocate themselves to the groups';
+$string['groupalloc:addinstance'] = 'Add a new group allocation';
+$string['groupalloc:choosegroup'] = 'Choose a group';
+$string['groupalloc:creategroup'] = 'Create new groups';
+$string['groupalloc:createpasswordgroup'] = 'Create password-protected groups';
+$string['groupalloc:leavegroup'] = 'Leave a group';
+$string['groupalloc:view'] = 'View group allocation activity';
+$string['groupalloc:viewmembers'] = 'View members of groups';
+$string['groupallocname'] = 'Name';
+$string['pluginadministration'] = 'Group allocation administration';
+$string['pluginname'] = 'Group allocation';
