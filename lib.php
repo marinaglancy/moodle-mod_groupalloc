@@ -85,11 +85,15 @@ function groupalloc_supports($feature) {
  * @return int The id of the newly inserted groupalloc record
  */
 function groupalloc_add_instance(stdClass $groupalloc, mod_groupalloc_mod_form $mform = null) {
-    global $DB;
+    global $DB, $CFG;
 
     $groupalloc->timecreated = time();
 
-    // You may have to add extra stuff in here.
+    if ($groupalloc->usegroupingid == -1) {
+        require_once($CFG->dirroot.'/group/lib.php');
+        $grouping = (object)['name' => $groupalloc->newgroupingname, 'courseid' => $groupalloc->course];
+        $groupalloc->usegroupingid = groups_create_grouping($grouping);
+    }
 
     $groupalloc->id = $DB->insert_record('groupalloc', $groupalloc);
 
@@ -174,6 +178,7 @@ function groupalloc_delete_instance($id) {
 
     // Delete any dependent records here.
 
+    $DB->delete_records('groupalloc_group', array('groupallocid' => $groupalloc->id));
     $DB->delete_records('groupalloc', array('id' => $groupalloc->id));
 
     //groupalloc_grade_item_delete($groupalloc);

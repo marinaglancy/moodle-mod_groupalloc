@@ -28,7 +28,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_groupalloc';
-$plugin->version = 2017012703;
+$plugin->version = 2017012900;
 $plugin->release = 'v1.0';
 $plugin->requires = 2016120500;
 $plugin->maturity = MATURITY_ALPHA;

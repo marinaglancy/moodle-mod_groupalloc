@@ -30,30 +30,19 @@
 require_once(dirname(dirname(dirname(__FILE__))).'/config.php');
 require_once(dirname(__FILE__).'/lib.php');
 
-$id = optional_param('id', 0, PARAM_INT); // Course_module ID, or
-$n  = optional_param('n', 0, PARAM_INT);  // ... groupalloc instance ID - it should be named as the first character of the module.
-
-if ($id) {
-    $cm         = get_coursemodule_from_id('groupalloc', $id, 0, false, MUST_EXIST);
-    $course     = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $groupalloc  = $DB->get_record('groupalloc', array('id' => $cm->instance), '*', MUST_EXIST);
-} else if ($n) {
-    $groupalloc  = $DB->get_record('groupalloc', array('id' => $n), '*', MUST_EXIST);
-    $course     = $DB->get_record('course', array('id' => $groupalloc->course), '*', MUST_EXIST);
-    $cm         = get_coursemodule_from_instance('groupalloc', $groupalloc->id, $course->id, false, MUST_EXIST);
+$groupallocid = optional_param('g', 0, PARAM_INT);  // Groupalloc instance ID - it should be named as the first character of the module.
+if ($groupallocid) {
+    list($course, $cm) = get_course_and_cm_from_instance($groupallocid, 'groupalloc');
 } else {
-    error('You must specify a course_module ID or an instance ID');
+    $cmid = required_param('id', PARAM_INT); // Course_module ID.
+    list($course, $cm) = get_course_and_cm_from_cmid($cmid, 'groupalloc');
 }
 
 require_login($course, true, $cm);
 
-$event = \mod_groupalloc\event\course_module_viewed::create(array(
-    'objectid' => $PAGE->cm->instance,
-    'context' => $PAGE->context,
-));
-$event->add_record_snapshot('course', $PAGE->course);
-$event->add_record_snapshot($PAGE->cm->modname, $groupalloc);
-$event->trigger();
+$groupalloc = $PAGE->activityrecord;
+
+\mod_groupalloc\event\course_module_viewed::create_from_cm($cm, $course, $groupalloc)->trigger();
 
 // Print the page header.
 
@@ -68,6 +57,9 @@ $PAGE->set_heading(format_string($course->fullname));
  * $PAGE->add_body_class('groupalloc-'.$somevar);
  */
 
+$main = new mod_groupalloc_main($cm, $groupalloc);
+$main->process_nonjs_actions();
+
 // Output starts here.
 echo $OUTPUT->header();
 
@@ -77,7 +69,50 @@ if ($groupalloc->intro) {
 }
 
 // Replace the following lines with you own code.
-echo $OUTPUT->heading('Yay! It works!');
+echo $OUTPUT->heading(format_string($groupalloc->name));
+
+// Create new group form.
+$cancreateempty = $main->can_create_empty_group();
+$cancreateandjoin = $main->can_create_and_join_group();
+if ($cancreateempty || $cancreateandjoin) {
+    $sesskey = sesskey();
+    $buttons = '';
+    if ($cancreateempty) {
+        $buttons .= "<input type=submit name=createempty value=\"Create empty group\">";
+    }
+    if ($cancreateandjoin) {
+        $buttons .= "<input type=submit name=createjoin value=\"Create and join\">";
+    }
+    $url = $PAGE->url;
+    echo <<<EOT
+<form method=POST action="$url">
+<input type=hidden name=sesskey value="$sesskey">
+Create new group:
+<input type=text name=newgroupname>
+$buttons
+</form>
+EOT;
+
+}
+
+$groups = $main->get_groups();
+if ($groups) {
+    foreach ($groups as $group) {
+        echo "<h4>".$group->get_formatted_name()."</h4>";
+        foreach ($group->get_members() as $user) {
+            echo '<p>'.fullname($user);
+            if ($user->id == $USER->id && $main->can_leave_group($group)) {
+                $leaveurl = new moodle_url($PAGE->url, ['sesskey' => sesskey(), 'leavegroup' => $group->get_id()]);
+                echo ' '.html_writer::link($leaveurl, 'Leave');
+            }
+            echo '</p>';
+        }
+        if ($main->can_join_group($group)) {
+            $joinurl = new moodle_url($PAGE->url, ['sesskey' => sesskey(), 'joingroup' => $group->get_id()]);
+            echo '<p>'.html_writer::link($joinurl, 'Join group').'</p>';
+        }
+    }
+}
 
 // Finish the page.
 echo $OUTPUT->footer();

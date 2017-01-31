@@ -67,7 +67,7 @@ $capabilities = array(
         )
     ),
 
-    'mod/groupalloc:choosegroup' => array(
+    'mod/groupalloc:joingroup' => array(
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => array(

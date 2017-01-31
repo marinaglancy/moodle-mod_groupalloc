@@ -72,17 +72,23 @@ class mod_groupalloc_mod_form extends moodleform_mod {
             return format_string($grouping->name);
         }, $groupings);
         $context = context_course::instance($COURSE->id);
-        if (empty($this->_cm) && has_capability('moodle/course:managegroups', $context)) {
+        $canmanagegroups = has_capability('moodle/course:managegroups', $context);
+        if (empty($this->_cm) && $canmanagegroups) {
             $choices = [-1 => 'Create new grouping'] + $choices; // TODO lang
         }
         $choices = [0 => 'No grouping'] + $choices; // TODO lang
 
-        $mform->addElement('select', 'config_groupingid', get_string('grouping', 'group'), $choices);
+        $mform->addElement('select', 'usegroupingid', get_string('grouping', 'group'), $choices);
 
-        if (empty($this->_cm)) {
-            $mform->addElement('text', 'config_groupingname', 'New grouping name', $choices); // TODO lang
-            $mform->disabledIf('config_groupingname', 'config_groupingid', 'ne', -1);
-            $mform->setType('config_groupingname', PARAM_TEXT);
+        if (empty($this->_cm) && $canmanagegroups) {
+            $mform->addElement('text', 'newgroupingname', 'New grouping name', $choices); // TODO lang
+            $mform->disabledIf('newgroupingname', 'usegroupingid', 'ne', -1);
+            $mform->setType('newgroupingname', PARAM_TEXT);
+        }
+
+        if ($canmanagegroups) {
+            $groupingslink = html_writer::link(new moodle_url('/group/groupings.php', ['id' => $COURSE->id]), 'Manage groupings'); // TODO lang
+            $mform->addElement('static', 'managegroupings', '', $groupingslink);
         }
 
         // Different options
@@ -96,7 +102,7 @@ class mod_groupalloc_mod_form extends moodleform_mod {
         $mform->setType('config_minmembers', PARAM_INT);
         // TODO: add help that members will not be allowed to leave if the number of members is less than minimum.
 
-        $mform->addElement('checkbox', 'config_autoremove', '', 'Automatically remove empty groups'); // TODO lang
+        $mform->addElement('advcheckbox', 'config_autoremove', '', 'Automatically remove empty groups'); // TODO lang
         // TODO: add help that only groups created from this module will be removed.
         $mform->setDefault('config_autoremove', 1);
 
@@ -155,6 +161,8 @@ class mod_groupalloc_mod_form extends moodleform_mod {
         if ($data['config_minmembers'] > $data['config_maxmembers']) {
             $errors['config_maxmembers'] = 'Can not be less than minmembers'; // TODO lang
         }
+
+        // TODO validate newgroupingname is specified and valid when usegroupingid == -1
 
         return $errors;
     }
